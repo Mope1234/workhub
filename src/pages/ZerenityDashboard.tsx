@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react';
 import * as store from '../utils/store';
 import type { Patient, Task } from '../utils/types';
+import { getWorkflowSuggestions, getTodayTheme, gmailComposeUrl, getZwcEmailTemplates } from '../utils/ai';
 
 export default function ZerenityDashboard({ onNav }: { onNav: (p: string) => void }) {
   const [pts, setPts] = useState<Patient[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
+  const [showEmail, setShowEmail] = useState(false);
 
   useEffect(() => { setPts(store.patientsStore.get()); setTasks(store.getTasks('zerenity')); }, []);
 
@@ -15,6 +17,9 @@ export default function ZerenityDashboard({ onNav }: { onNav: (p: string) => voi
   const todayTasks = tasks.filter(t => t.status !== 'done' && store.isToday(t.dueDate));
   const pending = tasks.filter(t => t.status !== 'done');
   const settings = store.getSettings();
+  const todayTheme = getTodayTheme('zerenity');
+  const wfSuggestions = getWorkflowSuggestions('zerenity');
+  const emailTemplates = getZwcEmailTemplates();
 
   const briefing: string[] = [];
   if (todayAppts.length) briefing.push(`📅 ${todayAppts.length} appointment(s) today: ${todayAppts.map(p => p.name).join(', ')}`);
@@ -28,9 +33,16 @@ export default function ZerenityDashboard({ onNav }: { onNav: (p: string) => voi
       <div><h1 className="text-xl sm:text-2xl font-bold text-white">🧠 Zerenity Wellness Clinic</h1><p className="text-slate-500 text-xs">Mental Health · {settings.zerenityDoctor}</p></div>
 
       <div className="bg-emerald-600/10 border border-emerald-500/20 rounded-2xl p-4">
-        <p className="text-emerald-400 text-xs font-bold mb-2">✨ DAILY BRIEFING</p>
+        <p className="text-emerald-400 text-xs font-bold mb-2">✨ AI DAILY BRIEFING</p>
         {briefing.map((b, i) => <p key={i} className="text-slate-300 text-sm leading-relaxed">{b}</p>)}
       </div>
+
+      {wfSuggestions.length > 0 && (
+        <div className="bg-violet-600/10 border border-violet-500/20 rounded-xl p-3">
+          <p className="text-violet-400 text-xs font-bold mb-1">🧠 AI SUGGESTIONS</p>
+          {wfSuggestions.map((s, i) => <p key={i} className="text-slate-300 text-xs leading-relaxed">{s}</p>)}
+        </div>
+      )}
 
       {todayAppts.length > 0 && (
         <div className="bg-blue-600/10 border border-blue-500/20 rounded-xl p-3 space-y-1">
@@ -56,13 +68,29 @@ export default function ZerenityDashboard({ onNav }: { onNav: (p: string) => voi
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
         <QA emoji="🩺" label="Patients" onClick={() => onNav('patients')} />
         <QA emoji="✅" label="Tasks" onClick={() => onNav('tasks')} />
-        <QA emoji="📝" label="Reports & Log" onClick={() => onNav('reports')} />
-        <QA emoji="📱" label="Social Media" onClick={() => onNav('social')} />
+        <QA emoji="📝" label="Reports" onClick={() => onNav('reports')} />
+        <QA emoji={todayTheme.emoji} label={`Post: ${todayTheme.label.split(' ').slice(0, 2).join(' ')}`} onClick={() => onNav('social')} />
+      </div>
+
+      {/* Gmail Quick Compose */}
+      <div className="bg-slate-900/50 border border-slate-800/30 rounded-2xl p-4">
+        <div className="flex items-center justify-between mb-3">
+          <p className="text-white font-semibold text-sm">📧 Quick Email</p>
+          <button onClick={() => setShowEmail(!showEmail)} className="text-emerald-400 text-xs">{showEmail ? 'Hide' : 'Show all'}</button>
+        </div>
+        <div className={`grid ${showEmail ? 'grid-cols-1' : 'grid-cols-2'} gap-2`}>
+          {(showEmail ? emailTemplates : emailTemplates.slice(0, 2)).map((t, i) => (
+            <a key={i} href={gmailComposeUrl(t.to, t.subject, t.body)} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 p-2.5 rounded-xl bg-slate-800/30 hover:bg-slate-800/50 active:scale-95 transition-all text-left">
+              <span className="text-sm">{t.label.split(' ')[0]}</span>
+              <span className="text-white text-xs font-medium flex-1 truncate">{t.label.slice(t.label.indexOf(' ') + 1)}</span>
+            </a>
+          ))}
+        </div>
       </div>
 
       {pending.length > 0 && (
         <div className="bg-slate-900/50 border border-slate-800/30 rounded-2xl p-4">
-          <div className="flex items-center justify-between mb-3"><p className="text-white font-semibold text-sm">⚡ Priority Tasks</p><button onClick={() => onNav('tasks')} className="text-emerald-400 text-xs">View all →</button></div>
+          <div className="flex items-center justify-between mb-3"><p className="text-white font-semibold text-sm">⚡ Priority Tasks</p><button onClick={() => onNav('tasks')} className="text-emerald-400 text-xs">View all ({pending.length}) →</button></div>
           <div className="space-y-2">
             {[...overdue, ...todayTasks].slice(0, 5).map(t => (
               <div key={t.id} className="flex items-center gap-3 p-2.5 rounded-xl bg-slate-800/30">
@@ -89,5 +117,5 @@ function Stat({ emoji, val, label, onClick, alert, hl }: { emoji: string; val: n
 }
 
 function QA({ emoji, label, onClick }: { emoji: string; label: string; onClick: () => void }) {
-  return <button onClick={onClick} className="flex items-center gap-2 p-3 rounded-xl bg-slate-900/30 border border-slate-800/30 hover:bg-slate-800/50 active:scale-95 transition-all text-left"><span>{emoji}</span><span className="text-white text-sm font-medium">{label}</span></button>;
+  return <button onClick={onClick} className="flex items-center gap-2 p-3 rounded-xl bg-slate-900/30 border border-slate-800/30 hover:bg-slate-800/50 active:scale-95 transition-all text-left"><span>{emoji}</span><span className="text-white text-xs font-medium">{label}</span></button>;
 }

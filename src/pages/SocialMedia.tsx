@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react';
 import type { SocialPost, Workspace } from '../utils/types';
 import { MSG_HASHTAGS, ZWC_HASHTAGS } from '../utils/types';
 import * as store from '../utils/store';
-import { enhancePost, aiGeneratePost } from '../utils/helpers';
+import { enhancePost } from '../utils/helpers';
+import { generatePost, getPostThemes, getTodayTheme } from '../utils/ai';
 
 export default function SocialMedia({ workspace }: { workspace: Workspace }) {
   const [posts, setPosts] = useState<SocialPost[]>([]);
@@ -12,6 +13,8 @@ export default function SocialMedia({ workspace }: { workspace: Workspace }) {
   const hashtags = workspace === 'msg' ? MSG_HASHTAGS : ZWC_HASHTAGS;
   const accent = workspace === 'msg' ? 'blue' : 'emerald';
   const settings = store.getSettings();
+  const todayTheme = getTodayTheme(workspace);
+  const themes = getPostThemes(workspace);
 
   const empty: Partial<SocialPost> = { content: '', platform: 'all', status: 'draft', scheduledDate: '', hashtags: '', notes: '', workspace };
   const [form, setForm] = useState<Partial<SocialPost>>(empty);
@@ -31,31 +34,46 @@ export default function SocialMedia({ workspace }: { workspace: Workspace }) {
   function startEdit(p: SocialPost) { setForm(p); setEditId(p.id); setShowForm(true); setTips([]); }
   function markPosted(id: string) { const p = posts.find(x => x.id === id); if (p) { store.updatePost(workspace, { ...p, status: 'posted' }); reload(); } }
   function addHashtag(h: string) { const c = form.hashtags || ''; if (!c.includes(h)) setForm({ ...form, hashtags: c ? c + ' ' + h : h }); }
-  function handleEnhance() { setTips(enhancePost(form.content || '', workspace)); }
 
-  // AI post themes
-  const aiThemes = workspace === 'msg'
-    ? [{ key: 'impact', label: '💜 Impact Story' }, { key: 'donation', label: '💰 Donation CTA' }, { key: 'mentorship', label: '🎓 Mentorship' }, { key: 'tuesday', label: '💛 Giving Tuesday' }]
-    : [{ key: 'awareness', label: '🧠 Awareness' }, { key: 'lagos', label: '🏙️ Lagos Life' }, { key: 'men', label: '💙 Men\'s Health' }, { key: 'selfcare', label: '🌿 Self-Care' }];
+  function aiGenerate(theme: string) {
+    const content = generatePost(workspace, theme);
+    setForm({ ...empty, workspace, content });
+    setShowForm(true);
+    setTips([]);
+  }
 
   const socialLink = workspace === 'msg' ? settings.msgFacebook : settings.zerenityInstagram || settings.zerenityWebsite;
+  const posted = posts.filter(p => p.status === 'posted').length;
+  const drafts = posts.filter(p => p.status === 'draft').length;
 
   return (
     <div className="space-y-4 animate-fadeIn">
       <div className="flex items-center justify-between">
-        <div><h1 className="text-xl font-bold text-white">📱 Social Media</h1><p className="text-slate-500 text-xs">{workspace === 'msg' ? 'MSG Foundation' : 'Zerenity Wellness'} · {posts.length} posts</p></div>
+        <div><h1 className="text-xl font-bold text-white">📱 Social Media</h1><p className="text-slate-500 text-xs">{workspace === 'msg' ? 'MSG Foundation' : 'Zerenity Wellness'} · {posted} posted · {drafts} drafts</p></div>
         <button onClick={() => { reset(); setShowForm(true); }} className={`px-4 py-2.5 bg-${accent}-600 text-white rounded-xl text-sm font-semibold active:scale-95`}>+ New</button>
       </div>
 
       {socialLink && <a href={socialLink} target="_blank" rel="noopener noreferrer" className={`flex items-center gap-2 p-3 rounded-xl bg-${accent}-600/10 border border-${accent}-500/20 active:scale-95`}><span>🔗</span><span className={`text-${accent}-400 text-sm font-medium`}>Open {workspace === 'msg' ? 'Facebook' : 'Website'} →</span></a>}
 
-      {/* AI Generator */}
+      {/* Today's Theme */}
       <div className="bg-violet-600/10 border border-violet-500/20 rounded-2xl p-4">
-        <p className="text-violet-400 text-xs font-bold mb-2">✨ AI POST GENERATOR</p>
-        <p className="text-slate-400 text-xs mb-3">Tap a theme to auto-generate a ready-to-post caption:</p>
-        <div className="flex flex-wrap gap-2">
-          {aiThemes.map(t => (
-            <button key={t.key} onClick={() => { setForm({ ...empty, workspace, content: aiGeneratePost(workspace, t.key) }); setShowForm(true); setTips([]); }} className="px-3 py-2 bg-violet-600/20 text-violet-300 border border-violet-500/30 rounded-xl text-xs font-semibold active:scale-95 hover:bg-violet-600/30">{t.label}</button>
+        <div className="flex items-center justify-between mb-2">
+          <p className="text-violet-400 text-xs font-bold">✨ TODAY'S CONTENT THEME</p>
+          <span className="text-xl">{todayTheme.emoji}</span>
+        </div>
+        <p className="text-white font-bold">{todayTheme.label}</p>
+        <button onClick={() => aiGenerate(todayTheme.theme)} className="mt-2 px-4 py-2 bg-violet-600 text-white rounded-xl text-xs font-semibold active:scale-95">✨ Generate Today's Post</button>
+      </div>
+
+      {/* AI Themes Grid */}
+      <div>
+        <p className="text-white font-semibold text-sm mb-2">✨ AI Post Generator — Pick a Theme</p>
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+          {themes.map(t => (
+            <button key={t.key} onClick={() => aiGenerate(t.key)} className="flex items-center gap-2 p-3 bg-slate-900/50 border border-slate-800/30 rounded-xl text-left hover:border-violet-500/30 active:scale-95 transition-all">
+              <span className="text-lg">{t.emoji}</span>
+              <span className="text-white text-xs font-medium">{t.label}</span>
+            </button>
           ))}
         </div>
       </div>
@@ -64,17 +82,18 @@ export default function SocialMedia({ workspace }: { workspace: Workspace }) {
       {showForm && (
         <div className="bg-slate-900/80 border border-slate-700/50 rounded-2xl p-4 space-y-3 animate-fadeIn">
           <div className="flex items-center justify-between"><p className="text-white font-semibold text-sm">{editId ? 'Edit Post' : '✏️ Compose'}</p><button onClick={reset} className="text-slate-500 text-lg">✕</button></div>
-          <textarea value={form.content || ''} onChange={e => setForm({ ...form, content: e.target.value })} placeholder="Write your post..." rows={8} className="w-full px-4 py-3 bg-slate-800/50 border border-slate-700/50 rounded-xl text-white text-sm placeholder-slate-500 focus:outline-none resize-none" style={{ fontSize: '16px' }} />
-          <p className="text-slate-500 text-[10px]">{(form.content || '').length} chars · Twitter: 280 · Instagram: 2,200</p>
-
-          <button onClick={handleEnhance} className="px-4 py-2 bg-violet-600/20 text-violet-400 rounded-xl text-xs font-semibold border border-violet-500/30 active:scale-95">✨ AI Analyze & Tips</button>
+          <textarea value={form.content || ''} onChange={e => setForm({ ...form, content: e.target.value })} placeholder="Write your post..." rows={10} className="w-full px-4 py-3 bg-slate-800/50 border border-slate-700/50 rounded-xl text-white text-sm placeholder-slate-500 focus:outline-none resize-none" style={{ fontSize: '16px' }} />
+          <div className="flex items-center justify-between">
+            <p className="text-slate-500 text-[10px]">{(form.content || '').length} chars</p>
+            <button onClick={() => setTips(enhancePost(form.content || '', workspace))} className="px-3 py-1.5 bg-violet-600/20 text-violet-400 rounded-lg text-[11px] font-semibold border border-violet-500/30 active:scale-95">✨ AI Tips</button>
+          </div>
           {tips.length > 0 && (
             <div className="bg-violet-600/10 border border-violet-500/20 rounded-xl p-3 space-y-1">
               {tips.map((t, i) => <p key={i} className="text-violet-300 text-xs">{t}</p>)}
             </div>
           )}
 
-          <div><p className="text-slate-400 text-xs mb-1">Hashtags (tap to add):</p>
+          <div><p className="text-slate-400 text-xs mb-1">Hashtags:</p>
             <div className="flex flex-wrap gap-1">{hashtags.map(h => <button key={h} onClick={() => addHashtag(h)} className="text-[10px] bg-slate-800 text-slate-300 px-2 py-1 rounded-full active:scale-95">{h}</button>)}</div>
             <input value={form.hashtags || ''} onChange={e => setForm({ ...form, hashtags: e.target.value })} placeholder="Selected hashtags..." className="w-full mt-2 px-3 py-2 bg-slate-800/50 border border-slate-700/50 rounded-xl text-white text-sm focus:outline-none" style={{ fontSize: '16px' }} />
           </div>
@@ -85,7 +104,7 @@ export default function SocialMedia({ workspace }: { workspace: Workspace }) {
           </div>
           <div className="flex gap-2 justify-end flex-wrap">
             <button onClick={reset} className="px-4 py-2 text-slate-400 text-sm">Cancel</button>
-            <button onClick={() => { if (form.content) navigator.clipboard.writeText((form.content || '') + '\n\n' + (form.hashtags || '')); }} className="px-4 py-2 bg-slate-700 text-white rounded-xl text-sm active:scale-95">📋 Copy</button>
+            <button onClick={() => { if (form.content) navigator.clipboard.writeText((form.content || '') + '\n\n' + (form.hashtags || '')).then(() => alert('Copied! Paste it on your social media.')); }} className="px-4 py-2 bg-slate-700 text-white rounded-xl text-sm active:scale-95">📋 Copy</button>
             <button onClick={handleSave} className={`px-5 py-2 bg-${accent}-600 text-white rounded-xl text-sm font-semibold active:scale-95`}>{editId ? 'Update' : 'Save'}</button>
           </div>
         </div>
@@ -93,7 +112,7 @@ export default function SocialMedia({ workspace }: { workspace: Workspace }) {
 
       {/* Posts */}
       <div className="space-y-3">
-        {posts.length === 0 ? <p className="text-center py-8 text-slate-500 text-sm">No posts yet. Use AI Generator or compose from scratch!</p> :
+        {posts.length === 0 ? <p className="text-center py-8 text-slate-500 text-sm">No posts yet. Generate one with AI above!</p> :
           posts.map(p => (
             <div key={p.id} className="p-4 rounded-xl bg-slate-900/50 border border-slate-800/30">
               <div className="flex items-start justify-between gap-2 mb-2">
@@ -110,7 +129,7 @@ export default function SocialMedia({ workspace }: { workspace: Workspace }) {
               </div>
               <p className="text-white text-sm whitespace-pre-wrap line-clamp-6">{p.content}</p>
               {p.hashtags && <p className="text-slate-500 text-[10px] mt-2">{p.hashtags}</p>}
-              <button onClick={() => navigator.clipboard.writeText(p.content + '\n\n' + (p.hashtags || ''))} className="mt-2 text-[11px] text-slate-400 active:scale-95">📋 Copy</button>
+              <button onClick={() => navigator.clipboard.writeText(p.content + '\n\n' + (p.hashtags || '')).then(() => alert('Copied!'))} className="mt-2 text-[11px] text-slate-400 active:scale-95">📋 Copy</button>
             </div>
           ))}
       </div>
