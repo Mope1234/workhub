@@ -275,44 +275,21 @@ export default function Integrations() {
       </Sec>
 
       {/* ═══ AI ═══ */}
-      <Sec title="🤖 AI Assistant Setup" desc="Add a free AI key to unlock the AI Assistant, grammar checker, post rewriter, and composer.">
-        <div className="space-y-4">
-          {/* Status */}
-          <div className={`flex items-center gap-3 p-3 rounded-xl border ${(settings.groqApiKey || settings.geminiApiKey) ? 'bg-emerald-600/10 border-emerald-500/20' : 'bg-amber-600/10 border-amber-500/20'}`}>
-            <span className="text-lg">{(settings.groqApiKey || settings.geminiApiKey) ? '✅' : '⚠️'}</span>
-            <div className="flex-1">
-              <p className={`text-sm font-semibold ${(settings.groqApiKey || settings.geminiApiKey) ? 'text-emerald-400' : 'text-amber-400'}`}>
-                {settings.groqApiKey ? '🟢 Groq AI Active (fastest, recommended)' : settings.geminiApiKey ? '🟢 Gemini AI Active' : 'AI key needed — follow the steps below (1 minute, free)'}
-              </p>
-              <p className="text-slate-500 text-[10px]">
-                {settings.groqApiKey ? '30 requests/min · 14,400/day · Llama 3.3 70B' : settings.geminiApiKey ? '15 requests/min · 1,500/day' : 'No key = AI features disabled'}
-              </p>
-            </div>
+      <Sec title="🤖 AI Assistant Setup" desc="AI works out of the box. Add a Gemini key for better quality (optional).">
+        <div className="space-y-3">
+          <div className="flex items-center gap-3 p-3 rounded-xl bg-emerald-600/10 border border-emerald-500/20">
+            <span className="text-lg">✅</span>
+            <div className="flex-1"><p className="text-emerald-400 text-sm font-semibold">AI Active — Free tier (no key needed)</p><p className="text-slate-500 text-[10px]">Uses DevToolBox AI. Works immediately for grammar, compose, questions.</p></div>
           </div>
-
-          {/* GROQ — Recommended */}
-          <div className="bg-blue-600/10 border border-blue-500/20 rounded-xl p-4">
-            <p className="text-blue-400 text-xs font-bold mb-1">⭐ RECOMMENDED — Groq (fastest, most generous free tier)</p>
-            <p className="text-white text-sm font-bold mb-3">30 requests/min · 14,400/day · No credit card needed</p>
-            <ol className="space-y-1.5 text-xs text-slate-300 mb-3">
-              <li>1. Go to <a href="https://console.groq.com" target="_blank" rel="noopener noreferrer" className="text-blue-400 underline font-medium">console.groq.com</a></li>
-              <li>2. Sign up with Google or GitHub (free, 30 seconds)</li>
-              <li>3. Click <strong className="text-white">"Create API Key"</strong> → copy the key (starts with <code className="text-emerald-400 bg-slate-800 px-1 rounded">gsk_</code>)</li>
-              <li>4. Paste below:</li>
-            </ol>
-            <Inp label="Groq API Key" value={settings.groqApiKey || ''} onChange={v => updateSettings({ groqApiKey: v })} placeholder="gsk_..." />
-          </div>
-
-          {/* GEMINI — Alternative */}
           <div className="bg-slate-800/30 rounded-xl p-4">
-            <p className="text-slate-400 text-xs font-bold mb-1">ALTERNATIVE — Google Gemini</p>
+            <p className="text-white text-sm font-bold mb-2">Optional: Add Google Gemini (better quality, still free)</p>
             <ol className="space-y-1.5 text-xs text-slate-400 mb-3">
-              <li>1. Go to <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener noreferrer" className="text-blue-400 underline">aistudio.google.com/apikey</a></li>
+              <li>1. Go to <a href="https://aistudio.google.com/apikey" target="_blank" className="text-blue-400 underline">aistudio.google.com/apikey</a></li>
               <li>2. Sign in with Google → Click "Create API Key"</li>
-              <li>3. Paste below:</li>
+              <li>3. Copy the key and paste below</li>
             </ol>
             <Inp label="Gemini API Key (optional)" value={settings.geminiApiKey || ''} onChange={v => updateSettings({ geminiApiKey: v })} placeholder="AIza..." />
-            <p className="text-slate-500 text-[10px] mt-2">15 requests/min · 1,500/day free. Used as backup if Groq is rate-limited.</p>
+            <p className="text-slate-500 text-[10px] mt-2">Free: 500 requests/day. The AI Assistant, social media rewrite, and grammar check will use Gemini when available.</p>
           </div>
         </div>
       </Sec>
