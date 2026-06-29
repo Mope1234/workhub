@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import type { DailyLog, Expense, Workspace } from '../utils/types';
 import { MSG_LOG_CATEGORIES, ZWC_LOG_CATEGORIES } from '../utils/types';
 import * as store from '../utils/store';
-import { generateWeeklyReport } from '../utils/helpers';
+import { generateWeeklyReport, waCompose, gmailCompose } from '../utils/helpers';
 
 const tabs = ['Daily Log', 'Expenses', 'Weekly Report'];
 
@@ -166,9 +166,10 @@ export default function Reports({ workspace }: { workspace: Workspace }) {
           <div className="bg-slate-900/80 border border-slate-800/50 rounded-2xl p-4 sm:p-6">
             <pre className="text-slate-300 text-xs sm:text-sm whitespace-pre-wrap font-mono leading-relaxed">{report}</pre>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <a href={`mailto:?subject=${label} Weekly Report — ${store.formatDate(store.todayISO())}&body=${encodeURIComponent(report)}`} className="flex items-center gap-3 p-4 bg-slate-900/50 border border-slate-800/30 rounded-xl active:scale-95"><span className="text-xl">📧</span><div><p className="text-white text-sm font-medium">Send via Email</p><p className="text-slate-500 text-[10px]">Opens email client</p></div></a>
-            <a href={`https://wa.me/?text=${encodeURIComponent(report)}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 p-4 bg-slate-900/50 border border-slate-800/30 rounded-xl active:scale-95"><span className="text-xl">💬</span><div><p className="text-white text-sm font-medium">Send via WhatsApp</p><p className="text-slate-500 text-[10px]">Share on WhatsApp</p></div></a>
+          <div className="grid grid-cols-1 gap-3">
+            <a href={waCompose(report)} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 p-4 bg-green-900/30 border border-green-800/30 rounded-xl active:scale-95 transition-transform"><span className="text-xl">💬</span><div><p className="text-white text-sm font-medium">Send via WhatsApp</p><p className="text-slate-500 text-[10px]">Opens WhatsApp with report</p></div></a>
+            <a href={gmailCompose('', `${label} Weekly Report — ${store.formatDate(store.todayISO())}`, report)} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 p-4 bg-slate-900/50 border border-slate-800/30 rounded-xl active:scale-95 transition-transform"><span className="text-xl">📧</span><div><p className="text-white text-sm font-medium">Send via Gmail</p><p className="text-slate-500 text-[10px]">Opens Gmail compose</p></div></a>
+            <a href={`mailto:?subject=${encodeURIComponent(label + ' Weekly Report — ' + store.formatDate(store.todayISO()))}&body=${encodeURIComponent(report)}`} className="flex items-center gap-3 p-4 bg-slate-900/50 border border-slate-800/30 rounded-xl active:scale-95 transition-transform"><span className="text-xl">✉️</span><div><p className="text-white text-sm font-medium">Send via Email App</p><p className="text-slate-500 text-[10px]">Opens default email client</p></div></a>
           </div>
         </div>
       )}

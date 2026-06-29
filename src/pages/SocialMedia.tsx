@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react';
 import type { SocialPost, Workspace } from '../utils/types';
 import { MSG_HASHTAGS, ZWC_HASHTAGS } from '../utils/types';
 import * as store from '../utils/store';
-import { enhancePost, aiGeneratePost } from '../utils/helpers';
+import { enhancePost, aiGeneratePost, waCompose } from '../utils/helpers';
+import { improvePost } from '../utils/ai';
 
 export default function SocialMedia({ workspace }: { workspace: Workspace }) {
   const [posts, setPosts] = useState<SocialPost[]>([]);
@@ -67,7 +68,10 @@ export default function SocialMedia({ workspace }: { workspace: Workspace }) {
           <textarea value={form.content || ''} onChange={e => setForm({ ...form, content: e.target.value })} placeholder="Write your post..." rows={8} className="w-full px-4 py-3 bg-slate-800/50 border border-slate-700/50 rounded-xl text-white text-sm placeholder-slate-500 focus:outline-none resize-none" style={{ fontSize: '16px' }} />
           <p className="text-slate-500 text-[10px]">{(form.content || '').length} chars · Twitter: 280 · Instagram: 2,200</p>
 
-          <button onClick={handleEnhance} className="px-4 py-2 bg-violet-600/20 text-violet-400 rounded-xl text-xs font-semibold border border-violet-500/30 active:scale-95">✨ AI Analyze & Tips</button>
+          <div className="flex flex-wrap gap-2">
+            <button onClick={handleEnhance} className="px-4 py-2 bg-violet-600/20 text-violet-400 rounded-xl text-xs font-semibold border border-violet-500/30 active:scale-95">✨ Analyze & Tips</button>
+            <button onClick={async () => { if(!form.content) return; setTips(['⏳ AI is rewriting your post...']); const improved = await improvePost(form.content, workspace); setForm({...form, content: improved}); setTips(['✅ Post improved by AI! Review and edit as needed.']); }} className="px-4 py-2 bg-blue-600/20 text-blue-400 rounded-xl text-xs font-semibold border border-blue-500/30 active:scale-95">🤖 AI Rewrite</button>
+          </div>
           {tips.length > 0 && (
             <div className="bg-violet-600/10 border border-violet-500/20 rounded-xl p-3 space-y-1">
               {tips.map((t, i) => <p key={i} className="text-violet-300 text-xs">{t}</p>)}
@@ -110,7 +114,10 @@ export default function SocialMedia({ workspace }: { workspace: Workspace }) {
               </div>
               <p className="text-white text-sm whitespace-pre-wrap line-clamp-6">{p.content}</p>
               {p.hashtags && <p className="text-slate-500 text-[10px] mt-2">{p.hashtags}</p>}
-              <button onClick={() => navigator.clipboard.writeText(p.content + '\n\n' + (p.hashtags || ''))} className="mt-2 text-[11px] text-slate-400 active:scale-95">📋 Copy</button>
+              <div className="flex flex-wrap gap-2 mt-2">
+                <button onClick={() => navigator.clipboard.writeText(p.content + '\n\n' + (p.hashtags || ''))} className="text-[11px] text-slate-400 active:scale-95 px-2 py-1 bg-slate-800/50 rounded-lg">📋 Copy</button>
+                <a href={waCompose(p.content + '\n\n' + (p.hashtags || ''))} target="_blank" rel="noopener noreferrer" className="text-[11px] text-green-400 active:scale-95 px-2 py-1 bg-green-900/30 rounded-lg">💬 WhatsApp</a>
+              </div>
             </div>
           ))}
       </div>

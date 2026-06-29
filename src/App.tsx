@@ -14,21 +14,22 @@ import Patients from './pages/Patients';
 import TaskBoard from './pages/TaskBoard';
 import SocialMedia from './pages/SocialMedia';
 import Integrations from './pages/Integrations';
+import AIAssistant from './pages/AIAssistant';
 
 type Page = string;
 
 const msgBottom = [
   { page: 'dashboard', label: 'Home', emoji: '🏠' },
   { page: 'students', label: 'Students', emoji: '🎓' },
+  { page: 'ai', label: 'AI', emoji: '🤖' },
   { page: 'tasks', label: 'Tasks', emoji: '✅' },
-  { page: 'reports', label: 'Reports', emoji: '📝' },
   { page: 'more', label: 'More', emoji: '☰' },
 ];
 const zwcBottom = [
   { page: 'dashboard', label: 'Home', emoji: '🏠' },
   { page: 'patients', label: 'Patients', emoji: '🩺' },
+  { page: 'ai', label: 'AI', emoji: '🤖' },
   { page: 'tasks', label: 'Tasks', emoji: '✅' },
-  { page: 'reports', label: 'Reports', emoji: '📝' },
   { page: 'more', label: 'More', emoji: '☰' },
 ];
 const msgSidebar = [
@@ -38,7 +39,8 @@ const msgSidebar = [
   { page: 'tasks', label: 'Tasks', emoji: '✅' },
   { s: 'REPORTING' }, { page: 'reports', label: 'Reports & Daily Log', emoji: '📝' },
   { page: 'social', label: 'Social Media', emoji: '📱' },
-  { s: 'SYSTEM' }, { page: 'integrations', label: 'Integrations & Sync', emoji: '🔗' },
+  { s: 'AI & SYSTEM' }, { page: 'ai', label: 'AI Assistant', emoji: '🤖' },
+  { page: 'integrations', label: 'Integrations & Sync', emoji: '🔗' },
 ];
 const zwcSidebar = [
   { s: 'OVERVIEW' }, { page: 'dashboard', label: 'Dashboard', emoji: '🏠' },
@@ -46,7 +48,8 @@ const zwcSidebar = [
   { page: 'tasks', label: 'Tasks', emoji: '✅' },
   { s: 'REPORTING' }, { page: 'reports', label: 'Reports & Daily Log', emoji: '📝' },
   { page: 'social', label: 'Social Media', emoji: '📱' },
-  { s: 'SYSTEM' }, { page: 'integrations', label: 'Integrations & Sync', emoji: '🔗' },
+  { s: 'AI & SYSTEM' }, { page: 'ai', label: 'AI Assistant', emoji: '🤖' },
+  { page: 'integrations', label: 'Integrations & Sync', emoji: '🔗' },
 ];
 
 export default function App() {
@@ -156,8 +159,8 @@ function MainApp() {
   const bottomNav = ws === 'msg' ? msgBottom : zwcBottom;
   const sidebarItems = ws === 'msg' ? msgSidebar : zwcSidebar;
   const moreItems = ws === 'msg'
-    ? [{ page: 'donors', label: 'Donors & Trustees', emoji: '🤝' }, { page: 'social', label: 'Social Media', emoji: '📱' }, { page: 'integrations', label: 'Integrations & Sync', emoji: '🔗' }]
-    : [{ page: 'social', label: 'Social Media', emoji: '📱' }, { page: 'integrations', label: 'Integrations & Sync', emoji: '🔗' }];
+    ? [{ page: 'donors', label: 'Donors & Trustees', emoji: '🤝' }, { page: 'reports', label: 'Reports', emoji: '📝' }, { page: 'social', label: 'Social Media', emoji: '📱' }, { page: 'integrations', label: 'Integrations', emoji: '🔗' }]
+    : [{ page: 'reports', label: 'Reports', emoji: '📝' }, { page: 'social', label: 'Social Media', emoji: '📱' }, { page: 'integrations', label: 'Integrations', emoji: '🔗' }];
 
   const accent = ws === 'msg' ? 'blue' : 'emerald';
 
@@ -244,6 +247,7 @@ function MainApp() {
             {ws === 'zerenity' && page === 'tasks' && <TaskBoard workspace="zerenity" />}
             {ws === 'zerenity' && page === 'reports' && <Reports workspace="zerenity" />}
             {ws === 'zerenity' && page === 'social' && <SocialMedia workspace="zerenity" />}
+            {page === 'ai' && <AIAssistant />}
             {page === 'integrations' && <Integrations />}
           </div>
         </div>

@@ -2,9 +2,26 @@ import type { Student, Patient, AppSettings, Workspace, DailyLog, Expense } from
 import * as store from './store';
 
 export function waLink(phone: string, msg: string) {
-  const clean = phone.replace(/[^0-9]/g, '');
-  const num = clean.startsWith('0') ? '234' + clean.slice(1) : clean.startsWith('234') ? clean : '234' + clean;
-  return `https://wa.me/${num}?text=${encodeURIComponent(msg)}`;
+  if (!phone || !phone.trim()) return '#';
+  const clean = phone.trim().replace(/[^0-9+]/g, '');
+  if (clean.length < 6) return '#';
+  let num = clean;
+  if (num.startsWith('+')) num = num.slice(1);
+  if (num.startsWith('0')) num = '234' + num.slice(1);
+  if (!num.startsWith('234') && num.length <= 11) num = '234' + num;
+  return `https://api.whatsapp.com/send?phone=${num}&text=${encodeURIComponent(msg)}`;
+}
+
+export function waCompose(msg: string) {
+  return `https://api.whatsapp.com/send?text=${encodeURIComponent(msg)}`;
+}
+
+export function gmailCompose(to: string, subject: string, body: string) {
+  return `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(to)}&su=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+}
+
+export function mailtoLink(to: string, subject: string, body: string) {
+  return `mailto:${encodeURIComponent(to)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
 }
 
 export function mentorNotifyMsg(mentorName: string, menteeName: string, topic: { title: string; focus: string[] }, calendlyLink: string) {

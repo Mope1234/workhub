@@ -69,7 +69,7 @@ export interface AppSettings {
   bankName: string; bankAccount: string; bankAccountName: string;
   programsManagerName: string; chairmanName: string;
   firebaseUrl: string; syncEnabled: boolean; lastSyncAt: string;
-  zerenityDoctor: string;
+  zerenityDoctor: string; geminiApiKey: string;
 }
 
 export const DEFAULT_SETTINGS: AppSettings = {
@@ -79,6 +79,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   bankAccountName: 'Mary Sunlola Gbadebo Foundation', programsManagerName: 'Mopelola Kadiri',
   chairmanName: 'Dr. Gbadebo', firebaseUrl: '', syncEnabled: false, lastSyncAt: '',
   zerenityDoctor: 'Dr. Fowobi Gbadebo',
+  geminiApiKey: '',
 };
 
 export const MENTORSHIP_TOPICS: Record<string, { title: string; focus: string[] }> = {

@@ -274,6 +274,26 @@ export default function Integrations() {
         </div>
       </Sec>
 
+      {/* ═══ AI ═══ */}
+      <Sec title="🤖 AI Assistant Setup" desc="AI works out of the box. Add a Gemini key for better quality (optional).">
+        <div className="space-y-3">
+          <div className="flex items-center gap-3 p-3 rounded-xl bg-emerald-600/10 border border-emerald-500/20">
+            <span className="text-lg">✅</span>
+            <div className="flex-1"><p className="text-emerald-400 text-sm font-semibold">AI Active — Free tier (no key needed)</p><p className="text-slate-500 text-[10px]">Uses DevToolBox AI. Works immediately for grammar, compose, questions.</p></div>
+          </div>
+          <div className="bg-slate-800/30 rounded-xl p-4">
+            <p className="text-white text-sm font-bold mb-2">Optional: Add Google Gemini (better quality, still free)</p>
+            <ol className="space-y-1.5 text-xs text-slate-400 mb-3">
+              <li>1. Go to <a href="https://aistudio.google.com/apikey" target="_blank" className="text-blue-400 underline">aistudio.google.com/apikey</a></li>
+              <li>2. Sign in with Google → Click "Create API Key"</li>
+              <li>3. Copy the key and paste below</li>
+            </ol>
+            <Inp label="Gemini API Key (optional)" value={settings.geminiApiKey || ''} onChange={v => updateSettings({ geminiApiKey: v })} placeholder="AIza..." />
+            <p className="text-slate-500 text-[10px] mt-2">Free: 500 requests/day. The AI Assistant, social media rewrite, and grammar check will use Gemini when available.</p>
+          </div>
+        </div>
+      </Sec>
+
       {/* ═══ SETTINGS ═══ */}
       <Sec title="⚙️ App Settings" desc="Details used across both workspaces. Changes save automatically.">
         <div className="grid sm:grid-cols-2 gap-3">
