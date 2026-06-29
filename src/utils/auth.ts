@@ -4,12 +4,12 @@ const AUTH_KEY = 'wh_auth';
 const SESSION_KEY = 'wh_session';
 const LOCK_KEY = 'wh_lock_ts';
 const LOCK_TIMEOUT = 15 * 60 * 1000; // 15 min auto-lock
+const HASH_VERSION = 'v2'; // bump this when hash algo changes
 
-// Hash function with fallback for environments without crypto.subtle
+// Hash function — works everywhere (HTTP, HTTPS, all browsers)
 function hashPin(pin: string): string {
   const salt = 'workhub_2026_secure';
   const str = pin + salt;
-  // djb2 + fnv1a combined hash — deterministic, works everywhere
   let h1 = 5381;
   let h2 = 2166136261;
   for (let i = 0; i < str.length; i++) {
@@ -17,7 +17,6 @@ function hashPin(pin: string): string {
     h1 = ((h1 << 5) + h1 + c) >>> 0;
     h2 = ((h2 ^ c) * 16777619) >>> 0;
   }
-  // Do multiple rounds for extra security
   for (let round = 0; round < 1000; round++) {
     h1 = ((h1 << 5) + h1 + h2 + round) >>> 0;
     h2 = ((h2 ^ h1) * 16777619) >>> 0;
@@ -31,6 +30,11 @@ export function isSetUp(): boolean {
     const raw = localStorage.getItem(AUTH_KEY);
     if (!raw) return false;
     const auth = JSON.parse(raw);
+    // If hash version doesn't match, old PIN is incompatible — force re-setup
+    if (auth.hashVersion !== HASH_VERSION) {
+      localStorage.removeItem(AUTH_KEY);
+      return false;
+    }
     return !!auth.pinHash;
   } catch { return false; }
 }
@@ -38,7 +42,7 @@ export function isSetUp(): boolean {
 export function setupPin(pin: string): boolean {
   if (pin.length < 4) return false;
   const pinHash = hashPin(pin);
-  const auth = { pinHash, createdAt: new Date().toISOString() };
+  const auth = { pinHash, hashVersion: HASH_VERSION, createdAt: new Date().toISOString() };
   localStorage.setItem(AUTH_KEY, JSON.stringify(auth));
   syncAuthToCloud(auth);
   createSession();
@@ -92,7 +96,7 @@ export function changePin(currentPin: string, newPin: string): { ok: boolean; er
   const verified = verifyPin(currentPin);
   if (!verified) return { ok: false, error: 'Current PIN is incorrect' };
   const pinHash = hashPin(newPin);
-  const auth = { pinHash, createdAt: new Date().toISOString() };
+  const auth = { pinHash, hashVersion: HASH_VERSION, createdAt: new Date().toISOString() };
   localStorage.setItem(AUTH_KEY, JSON.stringify(auth));
   syncAuthToCloud(auth);
   createSession();
@@ -129,7 +133,7 @@ export async function pullAuthFromCloud(): Promise<boolean> {
     const res = await fetch(`${url}/workhub/auth.json`);
     if (!res.ok) return false;
     const json = await res.json();
-    if (json?.data?.pinHash) {
+    if (json?.data?.pinHash && json.data.hashVersion === HASH_VERSION) {
       localStorage.setItem(AUTH_KEY, JSON.stringify(json.data));
       return true;
     }
