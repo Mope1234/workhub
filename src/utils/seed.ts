@@ -2,7 +2,7 @@ import type { Student, Task } from './types';
 import { students, genId, getTasks, saveTasks } from './store';
 
 const SEED_KEY = 'msg_seeded_v2';
-const TASK_SEED_KEY = 'wh_tasks_seeded_v1';
+const TASK_SEED_KEY = 'wh_tasks_seeded_v2';
 
 export function seedStudentsIfNeeded() {
   if (localStorage.getItem(SEED_KEY)) {
@@ -53,9 +53,9 @@ export function seedStudentsIfNeeded() {
 
 function seedTasksIfNeeded() {
   if (localStorage.getItem(TASK_SEED_KEY)) return;
+  // Merge: keep existing tasks, add new ones that don't already exist (by title match)
   const existingMsg = getTasks('msg');
   const existingZwc = getTasks('zerenity');
-  if (existingMsg.length > 0 || existingZwc.length > 0) { localStorage.setItem(TASK_SEED_KEY, '1'); return; }
 
   const now = new Date().toISOString();
   const t = (ws: 'msg' | 'zerenity', title: string, cat: string, priority: 'urgent' | 'high' | 'medium' | 'low', due: string, recurring: 'none' | 'daily' | 'weekly' | 'monthly', desc = ''): Task => ({
@@ -156,13 +156,16 @@ function seedTasksIfNeeded() {
     t('zerenity', 'Review and update clinic website and online listings', 'Marketing', 'medium', '2026-07-28', 'monthly', 'Ensure zerenitywellness.org is up to date, Google listing accurate'),
   ];
 
-  // Save all MSG tasks
-  const allMsg = [...msgPending, ...msgDaily, ...msgWeekly, ...msgMonthly];
-  saveTasks('msg', allMsg);
+  // Merge: keep existing tasks, only add new ones that don't exist by title
+  const newMsg = [...msgPending, ...msgDaily, ...msgWeekly, ...msgMonthly];
+  const existingMsgTitles = new Set(existingMsg.map(t => t.title));
+  const mergedMsg = [...existingMsg, ...newMsg.filter(t => !existingMsgTitles.has(t.title))];
+  saveTasks('msg', mergedMsg);
 
-  // Save all Zerenity tasks
-  const allZwc = [...zwcDaily, ...zwcWeekly, ...zwcMonthly];
-  saveTasks('zerenity', allZwc);
+  const newZwc = [...zwcDaily, ...zwcWeekly, ...zwcMonthly];
+  const existingZwcTitles = new Set(existingZwc.map(t => t.title));
+  const mergedZwc = [...existingZwc, ...newZwc.filter(t => !existingZwcTitles.has(t.title))];
+  saveTasks('zerenity', mergedZwc);
 
   localStorage.setItem(TASK_SEED_KEY, '1');
 }
