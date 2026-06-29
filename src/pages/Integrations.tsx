@@ -275,21 +275,48 @@ export default function Integrations() {
       </Sec>
 
       {/* ═══ AI ═══ */}
-      <Sec title="🤖 AI Assistant Setup" desc="AI works out of the box. Add a Gemini key for better quality (optional).">
-        <div className="space-y-3">
-          <div className="flex items-center gap-3 p-3 rounded-xl bg-emerald-600/10 border border-emerald-500/20">
-            <span className="text-lg">✅</span>
-            <div className="flex-1"><p className="text-emerald-400 text-sm font-semibold">AI Active — Free tier (no key needed)</p><p className="text-slate-500 text-[10px]">Uses DevToolBox AI. Works immediately for grammar, compose, questions.</p></div>
+      <Sec title="🤖 AI Assistant Setup" desc="Add a free API key to power AI chat, grammar fix, social media rewrite, and more.">
+        <div className="space-y-4">
+          {/* Status */}
+          <div className={`flex items-center gap-3 p-3 rounded-xl border ${settings.groqApiKey ? 'bg-emerald-600/10 border-emerald-500/20' : 'bg-amber-600/10 border-amber-500/20'}`}>
+            <span className="text-lg">{settings.groqApiKey ? '✅' : '⚠️'}</span>
+            <div className="flex-1">
+              <p className={`text-sm font-semibold ${settings.groqApiKey ? 'text-emerald-400' : 'text-amber-400'}`}>
+                {settings.groqApiKey ? 'AI Active — Groq (Llama 3.3 70B)' : 'AI Not Configured — Add a free key below'}
+              </p>
+              <p className="text-slate-500 text-[10px]">{settings.groqApiKey ? 'Fast, free, 30 requests/minute' : 'Takes 2 minutes, no credit card needed'}</p>
+            </div>
           </div>
+
+          {/* Groq — Primary */}
           <div className="bg-slate-800/30 rounded-xl p-4">
-            <p className="text-white text-sm font-bold mb-2">Optional: Add Google Gemini (better quality, still free)</p>
+            <p className="text-white text-sm font-bold mb-1">🚀 Groq AI (Primary — Recommended)</p>
+            <p className="text-slate-400 text-xs mb-3">Fastest free AI. Powers chat, grammar fix, social media rewrite, compose, and more.</p>
             <ol className="space-y-1.5 text-xs text-slate-400 mb-3">
-              <li>1. Go to <a href="https://aistudio.google.com/apikey" target="_blank" className="text-blue-400 underline">aistudio.google.com/apikey</a></li>
-              <li>2. Sign in with Google → Click "Create API Key"</li>
-              <li>3. Copy the key and paste below</li>
+              <li className="flex gap-2"><span className="text-blue-400 font-bold">1.</span>Go to <a href="https://console.groq.com" target="_blank" rel="noopener noreferrer" className="text-blue-400 underline font-medium">console.groq.com</a> → sign up free (Google or email, no credit card)</li>
+              <li className="flex gap-2"><span className="text-blue-400 font-bold">2.</span>Click <strong className="text-white">"API Keys"</strong> in the left menu → <strong className="text-white">"Create API Key"</strong></li>
+              <li className="flex gap-2"><span className="text-blue-400 font-bold">3.</span>Copy the key (starts with <code className="text-emerald-400 bg-slate-800 px-1 rounded text-[11px]">gsk_</code>) and paste below</li>
+            </ol>
+            <Inp label="Groq API Key" value={settings.groqApiKey || ''} onChange={v => updateSettings({ groqApiKey: v })} placeholder="gsk_..." />
+            {settings.groqApiKey && !settings.groqApiKey.startsWith('gsk_') && (
+              <p className="text-amber-400 text-xs mt-1">⚠️ Groq keys start with "gsk_" — double-check you copied correctly.</p>
+            )}
+            {settings.groqApiKey && settings.groqApiKey.startsWith('gsk_') && (
+              <p className="text-emerald-400 text-xs mt-1">✅ Key looks correct! Go to 🤖 AI Assistant to test it.</p>
+            )}
+            <p className="text-slate-500 text-[10px] mt-2">Free: 30 requests/min, 500K tokens/day. Uses Llama 3.3 70B model.</p>
+          </div>
+
+          {/* Gemini — Backup */}
+          <div className="bg-slate-800/30 rounded-xl p-4">
+            <p className="text-white text-sm font-bold mb-1">🔮 Google Gemini (Backup — Optional)</p>
+            <p className="text-slate-400 text-xs mb-3">Used as fallback if Groq is unavailable.</p>
+            <ol className="space-y-1.5 text-xs text-slate-400 mb-3">
+              <li>1. Go to <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener noreferrer" className="text-blue-400 underline">aistudio.google.com/apikey</a></li>
+              <li>2. Sign in with Google → "Create API Key"</li>
+              <li>3. Paste below</li>
             </ol>
             <Inp label="Gemini API Key (optional)" value={settings.geminiApiKey || ''} onChange={v => updateSettings({ geminiApiKey: v })} placeholder="AIza..." />
-            <p className="text-slate-500 text-[10px] mt-2">Free: 500 requests/day. The AI Assistant, social media rewrite, and grammar check will use Gemini when available.</p>
           </div>
         </div>
       </Sec>
@@ -337,7 +364,8 @@ export default function Integrations() {
           <IntR emoji="📅" name="Calendly" status={settings.calendlyLink ? 'active' : 'setup'} desc={settings.calendlyLink ? 'Connected for mentor scheduling' : 'Add Calendly link in settings above'} />
           <IntR emoji="📱" name="Social Media" status="active" desc="AI post generator + compose & copy for all platforms" />
           <IntR emoji="📧" name="Email" status="active" desc="One-tap email for reports and communication" />
-          <IntR emoji="✨" name="AI Assistant" status="active" desc="Daily briefings, weekly reports, social posts, engagement tips" />
+          <IntR emoji="🤖" name="AI Assistant (Groq)" status={settings.groqApiKey ? 'active' : 'setup'} desc={settings.groqApiKey ? 'Groq connected — Llama 3.3 70B' : 'Add free Groq API key above'} />
+          <IntR emoji="✨" name="AI Features" status="active" desc="Daily briefings, weekly reports, social posts, engagement tips" />
         </div>
       </Sec>
     </div>
