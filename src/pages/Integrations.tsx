@@ -275,24 +275,7 @@ export default function Integrations() {
       </Sec>
 
       {/* ═══ AI ═══ */}
-      <Sec title="🤖 AI Assistant Setup" desc="AI works out of the box. Add a Gemini key for better quality (optional).">
-        <div className="space-y-3">
-          <div className="flex items-center gap-3 p-3 rounded-xl bg-emerald-600/10 border border-emerald-500/20">
-            <span className="text-lg">✅</span>
-            <div className="flex-1"><p className="text-emerald-400 text-sm font-semibold">AI Active — Free tier (no key needed)</p><p className="text-slate-500 text-[10px]">Uses DevToolBox AI. Works immediately for grammar, compose, questions.</p></div>
-          </div>
-          <div className="bg-slate-800/30 rounded-xl p-4">
-            <p className="text-white text-sm font-bold mb-2">Optional: Add Google Gemini (better quality, still free)</p>
-            <ol className="space-y-1.5 text-xs text-slate-400 mb-3">
-              <li>1. Go to <a href="https://aistudio.google.com/apikey" target="_blank" className="text-blue-400 underline">aistudio.google.com/apikey</a></li>
-              <li>2. Sign in with Google → Click "Create API Key"</li>
-              <li>3. Copy the key and paste below</li>
-            </ol>
-            <Inp label="Gemini API Key (optional)" value={settings.geminiApiKey || ''} onChange={v => updateSettings({ geminiApiKey: v })} placeholder="AIza..." />
-            <p className="text-slate-500 text-[10px] mt-2">Free: 500 requests/day. The AI Assistant, social media rewrite, and grammar check will use Gemini when available.</p>
-          </div>
-        </div>
-      </Sec>
+      <AiSetup settings={settings} updateSettings={updateSettings} />
 
       {/* ═══ SETTINGS ═══ */}
       <Sec title="⚙️ App Settings" desc="Details used across both workspaces. Changes save automatically.">
@@ -364,6 +347,113 @@ function IntR({ emoji, name, status, desc }: { emoji: string; name: string; stat
       <div className="flex-1 min-w-0"><p className="text-white text-sm font-medium">{name}</p><p className="text-slate-500 text-[10px]">{desc}</p></div>
       <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold ${status === 'active' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-amber-500/20 text-amber-400'}`}>{status === 'active' ? '✅ Active' : '⚙️ Setup'}</span>
     </div>
+  );
+}
+
+function AiSetup({ settings, updateSettings }: { settings: AppSettings; updateSettings: (p: Partial<AppSettings>) => void }) {
+  const [keySaved, setKeySaved] = useState(false);
+  const [testingAi, setTestingAi] = useState(false);
+  const [aiResult, setAiResult] = useState('');
+
+  function handleKeyChange(v: string) {
+    updateSettings({ geminiApiKey: v });
+    setKeySaved(true);
+    setAiResult('');
+    setTimeout(() => setKeySaved(false), 2000);
+  }
+
+  async function testAiKey() {
+    // Save first
+    store.saveSettings(settings);
+    setTestingAi(true);
+    setAiResult('');
+    const key = settings.geminiApiKey?.trim();
+    if (!key) {
+      setAiResult('❌ No API key entered. Paste your Gemini key above first.');
+      setTestingAi(false);
+      return;
+    }
+    try {
+      const res = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${key}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ contents: [{ parts: [{ text: 'Say "WorkHub AI is connected!" and nothing else.' }] }] }),
+        }
+      );
+      if (res.ok) {
+        const data = await res.json();
+        const text = data?.candidates?.[0]?.content?.parts?.[0]?.text || 'Connected!';
+        setAiResult(`✅ ${text.trim()}`);
+      } else if (res.status === 400) {
+        setAiResult('❌ Invalid API key. Please check and paste the correct key.');
+      } else if (res.status === 403) {
+        setAiResult('❌ API key not authorized. Make sure Generative Language API is enabled.');
+      } else {
+        setAiResult(`❌ Error: HTTP ${res.status}. Check your key.`);
+      }
+    } catch (e) {
+      setAiResult(`❌ Connection failed: ${String(e)}`);
+    }
+    setTestingAi(false);
+  }
+
+  return (
+    <Sec title="🤖 AI Assistant Setup" desc="AI works out of the box. Add a Gemini key for better quality (optional).">
+      <div className="space-y-4">
+        <div className="flex items-center gap-3 p-3 rounded-xl bg-emerald-600/10 border border-emerald-500/20">
+          <span className="text-lg">✅</span>
+          <div className="flex-1">
+            <p className="text-emerald-400 text-sm font-semibold">
+              {settings.geminiApiKey?.trim() ? '🟢 Gemini AI Active' : 'AI Active — Free tier (no key needed)'}
+            </p>
+            <p className="text-slate-500 text-[10px]">
+              {settings.geminiApiKey?.trim() ? 'Using Google Gemini for high-quality responses' : 'Using DevToolBox AI. Add Gemini key below for better quality.'}
+            </p>
+          </div>
+        </div>
+
+        <div className="bg-slate-800/30 rounded-xl p-4 space-y-3">
+          <p className="text-white text-sm font-bold">Google Gemini API Key (free, optional)</p>
+          <ol className="space-y-1.5 text-xs text-slate-400">
+            <li className="flex gap-2"><span className="text-blue-400 font-bold">1.</span>Go to <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener noreferrer" className="text-blue-400 underline font-medium">aistudio.google.com/apikey</a></li>
+            <li className="flex gap-2"><span className="text-blue-400 font-bold">2.</span>Sign in with Google → Click <strong className="text-white">"Create API Key"</strong></li>
+            <li className="flex gap-2"><span className="text-blue-400 font-bold">3.</span>Copy the key (starts with <code className="text-emerald-400 bg-slate-800 px-1 rounded">AIza...</code>) and paste below</li>
+          </ol>
+
+          <div>
+            <label className="text-[10px] text-slate-500 mb-1 block">Gemini API Key</label>
+            <input
+              value={settings.geminiApiKey || ''}
+              onChange={e => handleKeyChange(e.target.value)}
+              placeholder="AIzaSy..."
+              className="w-full px-4 py-3 bg-slate-900/50 border border-slate-700/50 rounded-xl text-white text-sm placeholder-slate-600 focus:outline-none focus:border-blue-500/50"
+              style={{ fontSize: '16px' }}
+            />
+            {keySaved && <p className="text-emerald-400 text-xs mt-1">✅ Key saved automatically!</p>}
+          </div>
+
+          <div className="flex flex-wrap gap-2">
+            <button
+              onClick={testAiKey}
+              disabled={testingAi}
+              className="px-5 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-semibold active:scale-95 disabled:opacity-50"
+            >
+              {testingAi ? '⏳ Testing...' : '🔌 Test AI Connection'}
+            </button>
+          </div>
+
+          {aiResult && (
+            <div className={`p-3 rounded-xl text-sm font-medium ${aiResult.startsWith('✅') ? 'bg-emerald-600/10 border border-emerald-500/20 text-emerald-400' : 'bg-red-600/10 border border-red-500/20 text-red-400'}`}>
+              {aiResult}
+            </div>
+          )}
+
+          <p className="text-slate-500 text-[10px]">Free: 500 requests/day. Powers AI chat, grammar check, social media rewrite, message compose, and more.</p>
+        </div>
+      </div>
+    </Sec>
   );
 }
 
